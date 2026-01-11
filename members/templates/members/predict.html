@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CA Housing Valuation</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .card { background: white; max-width: 700px; margin: auto; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        #map { height: 350px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #ddd; }
+        .input-group { margin-bottom: 15px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .btn-predict { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .result-box { margin-top: 20px; padding: 20px; border-radius: 10px; text-align: center; border: 2px solid #27ae60; background: #ecfdf5; }
+        .result-price { font-size: 2em; color: #27ae60; display: block; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>🏠 Home Valuation Tool</h1>
+    <div id="map"></div>
+    
+    <form id="predictionForm">
+        {% csrf_token %}
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <div style="flex: 1;"><label>Longitude</label><input type="number" step="any" id="longitude" name="longitude" required></div>
+            <div style="flex: 1;"><label>Latitude</label><input type="number" step="any" id="latitude" name="latitude" required></div>
+        </div>
+
+        <div class="input-group"><label>Median Income ($10k)</label><input type="number" step="any" name="median_income" required></div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="input-group"><label>Total Rooms</label><input type="number" name="total_rooms" required></div>
+            <div class="input-group"><label>Total Bedrooms</label><input type="number" name="total_bedrooms" required></div>
+        </div>
+
+        <div class="input-group">
+            <label>Ocean Proximity</label>
+            <select name="ocean_proximity">
+                <option value="<1H OCEAN">1H OCEAN </option>
+                <option value="INLAND">INLAND</option>
+                <option value="NEAR OCEAN">NEAR OCEAN</option>
+                <option value="NEAR BAY">NEAR BAY</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>Algorithm</label>
+            <select name="model_choice">
+                <option value="rf">Random Forest (Accurate)</option>
+                <option value="linear">Linear Regression (Fast)</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn-predict">Estimate Property Value</button>
+    </form>
+
+    <div id="result-container"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+
+<script>
+    // Map Setup
+    var map = L.map('map').setView([36.7783, -119.4179], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    var marker;
+
+    map.on('click', function(e) {
+        if (marker) map.removeLayer(marker);
+        marker = L.marker(e.latlng).addTo(map);
+        document.getElementById('latitude').value = e.latlng.lat.toFixed(6);
+        document.getElementById('longitude').value = e.latlng.lng.toFixed(6);
+    });
+
+    // Load Heatmap
+    fetch("{% url 'heatmap_api' %}")
+       .then(res => res.json())
+       .then(res => L.heatLayer(res.data, {radius: 20, blur: 15}).addTo(map));
+
+    // AJAX Prediction
+    document.getElementById('predictionForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const container = document.getElementById('result-container');
+        container.innerHTML = 'Calculating...';
+
+        fetch("{% url 'predict' %}", {
+            method: "POST",
+            headers: {"Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}"},
+            body: JSON.stringify(Object.fromEntries(new FormData(this)))
+        })
+        .then(res => res.json())
+        .then(res => {
+            if(res.status === "success") {
+                container.innerHTML = `<div class="result-box"><span class="result-price">${res.formatted_price}</span></div>`;
+            } else {
+                container.innerHTML = `<div style="color:red">${res.message}</div>`;
+            }
+        });
+    });
+</script>
+</body>
+</html>
