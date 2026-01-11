@@ -5,3 +5,4 @@ uvicorn
 gunicorn
 numpy
 daphne 
+whitenoise
