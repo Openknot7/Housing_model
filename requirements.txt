@@ -3,4 +3,5 @@ pandas
 scikit-learn
 uvicorn
 gunicorn
-numpydaphne 
+numpy
+daphne 
