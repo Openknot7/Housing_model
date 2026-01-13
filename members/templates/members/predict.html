@@ -12,32 +12,52 @@
         .btn-predict { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .result-box { margin-top: 20px; padding: 20px; border-radius: 10px; text-align: center; border: 2px solid #27ae60; background: #ecfdf5; }
         .result-price { font-size: 2em; color: #27ae60; display: block; font-weight: bold; }
+        small { color: #777; }
     </style>
 </head>
+
 <body>
 
 <div class="card">
     <h1>🏠 Home Valuation Tool</h1>
+
     <div id="map"></div>
     
     <form id="predictionForm">
         {% csrf_token %}
+
         <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <div style="flex: 1;"><label>Longitude</label><input type="number" step="any" id="longitude" name="longitude" required></div>
-            <div style="flex: 1;"><label>Latitude</label><input type="number" step="any" id="latitude" name="latitude" required></div>
+            <div style="flex: 1;">
+                <label>Longitude</label>
+                <input type="number" step="any" id="longitude" name="longitude" required>
+            </div>
+            <div style="flex: 1;">
+                <label>Latitude</label>
+                <input type="number" step="any" id="latitude" name="latitude" required>
+            </div>
         </div>
 
-        <div class="input-group"><label>Median Income ($10k)</label><input type="number" step="any" name="median_income" required></div>
+        <div class="input-group">
+            <label>Median Income ($10k)</label>
+            <input type="number" step="any" name="median_income" required>
+            <small>Example: 3.5 = $35,000</small>
+        </div>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div class="input-group"><label>Total Rooms</label><input type="number" name="total_rooms" required></div>
-            <div class="input-group"><label>Total Bedrooms</label><input type="number" name="total_bedrooms" required></div>
+            <div class="input-group">
+                <label>Total Rooms</label>
+                <input type="number" name="total_rooms" required>
+            </div>
+            <div class="input-group">
+                <label>Total Bedrooms</label>
+                <input type="number" name="total_bedrooms" required>
+            </div>
         </div>
 
         <div class="input-group">
             <label>Ocean Proximity</label>
             <select name="ocean_proximity">
-                <option value="<1H OCEAN">1H OCEAN </option>
+                <option value="<1H OCEAN">1H OCEAN</option>
                 <option value="INLAND">INLAND</option>
                 <option value="NEAR OCEAN">NEAR OCEAN</option>
                 <option value="NEAR BAY">NEAR BAY</option>
@@ -62,43 +82,77 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
 
 <script>
-    // Map Setup
-    var map = L.map('map').setView([36.7783, -119.4179], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    var marker;
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie) {
+            document.cookie.split(';').forEach(c => {
+                c = c.trim();
+                if (c.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(c.substring(name.length + 1));
+                }
+            });
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
 
+    // MAP SETUP
+    const map = L.map('map').setView([36.7783, -119.4179], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    let marker;
     map.on('click', function(e) {
         if (marker) map.removeLayer(marker);
         marker = L.marker(e.latlng).addTo(map);
-        document.getElementById('latitude').value = e.latlng.lat.toFixed(6);
-        document.getElementById('longitude').value = e.latlng.lng.toFixed(6);
+        latitude.value = e.latlng.lat.toFixed(6);
+        longitude.value = e.latlng.lng.toFixed(6);
     });
 
-    // Load Heatmap
-    fetch("{% url 'heatmap_api' %}")
-       .then(res => res.json())
-       .then(res => L.heatLayer(res.data, {radius: 20, blur: 15}).addTo(map));
+    // HEATMAP LOAD (NO SYNTAX ERROR)
+    fetch("/predict/")
+        .then(res => res.json())
+        .then(res => {
+            if (res.data) {
+                L.heatLayer(res.data, { radius: 20, blur: 15 }).addTo(map);
+            }
+        });
 
-    // AJAX Prediction
-    document.getElementById('predictionForm').addEventListener('submit', function(e) {
+    // FORM SUBMIT (NO PAGE REFRESH)
+    document.getElementById("predictionForm").addEventListener("submit", function(e) {
         e.preventDefault();
-        const container = document.getElementById('result-container');
-        container.innerHTML = 'Calculating...';
 
-        fetch("{% url 'predict' %}", {
+        const container = document.getElementById("result-container");
+        container.innerHTML = "<b>⏳ Server is thinking... check terminal!</b>";
+
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        delete data.csrfmiddlewaretoken;
+
+        fetch("/predict/", {
             method: "POST",
-            headers: {"Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}"},
-            body: JSON.stringify(Object.fromEntries(new FormData(this)))
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken
+            },
+            body: JSON.stringify(data)
         })
         .then(res => res.json())
         .then(res => {
-            if(res.status === "success") {
-                container.innerHTML = `<div class="result-box"><span class="result-price">${res.formatted_price}</span></div>`;
+            if (res.status === "success") {
+                container.innerHTML = `
+                    <div class="result-box">
+                        <span class="result-price">${res.formatted_price}</span>
+                    </div>
+                `;
             } else {
                 container.innerHTML = `<div style="color:red">${res.message}</div>`;
             }
+        })
+        .catch(() => {
+            container.innerHTML = `<div style="color:red">Network Error</div>`;
         });
     });
 </script>
+
 </body>
 </html>

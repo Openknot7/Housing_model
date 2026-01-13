@@ -21,19 +21,24 @@ ONE_HOT_COLUMNS = ['ocean_proximity_<1H OCEAN>', 'ocean_proximity_INLAND',
                    'ocean_proximity_ISLAND', 'ocean_proximity_NEAR BAY',
                    'ocean_proximity_NEAR OCEAN']
 
+def get_trained_model():
+    global _CACHED_MODEL
+    if _CACHED_MODEL is None:
+        if not os.path.exists(MODEL_PATH):
+            raise FileNotFoundError(f"MODEL NOT FOUND AT: {MODEL_PATH}")
+        print("⚡ Loading Model into RAM...")
+        _CACHED_MODEL = joblib.load(MODEL_PATH)
+    return _CACHED_MODEL
+
+
 def preprocess_input(features):
-    
     # Numeric features
-    X_num = [float(features[feature]) for feature in num_attribs]
+    X_num = [float(features.get(feature, 0)) for feature in num_attribs]
     
     # Categorical feature one-hot
-    cat_value = features['ocean_proximity']
+    cat_value = features.get('ocean_proximity', 'INLAND')
     X_cat = [1 if col.endswith(f'_{cat_value}') else 0 for col in ONE_HOT_COLUMNS]
     
-    # Combine all features
-    X = X_num + X_cat
-    
-    # Convert to DataFrame for sklearn
-    df = pd.DataFrame([X], columns=num_attribs + ONE_HOT_COLUMNS)
+    # Combine and convert to DataFrame
+    df = pd.DataFrame([X_num + X_cat], columns=num_attribs + ONE_HOT_COLUMNS)
     return df
-

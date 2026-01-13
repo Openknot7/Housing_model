@@ -3,7 +3,11 @@ import pandas as pd
 import os
 import traceback
 
-MODEL_PATH = r"C:\Users\User\open\openknot_club\members\ml_models\California_Housing_Model.pkl"
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_PATH = os.path.join(BASE_DIR, "ml_models", "California_Housing_Model.pkl")
+
+# MODEL_PATH = r"C:\Users\User\open\openknot_club\members\ml_models\California_Housing_Model.pkl"
 
 # --- GLOBAL CACHE ---
 # This variable lives in RAM as long as the server is running.
@@ -53,8 +57,14 @@ def get_model_prediction(data_dict):
         else:
             model = all_models
 
+        
         # 4. Predict
-        prediction = model.predict(df_input)[0]
+        from joblib import parallel_backend
+        
+        # We wrap this to prevent the threading deadlock
+        with parallel_backend('threading', n_jobs=1):
+            prediction = model.predict(df_input)[0]
+        
 
         return {
             "status": "success",

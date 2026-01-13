@@ -8,6 +8,6 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
-    path('', views.predict, name='predict'),
+    path('predict/', views.predict, name='predict'),
     path('api/heatmap/', views.heatmap_api, name='heatmap_api'),
 ]

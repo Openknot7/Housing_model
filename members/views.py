@@ -44,10 +44,24 @@ from django.http import JsonResponse
 async_get_prediction = sync_to_async(get_model_prediction)
 
 async def predict(request):
+    print("\n🚀 --- PREDICT ATTEMPT STARTED ---")
     if request.method == 'POST':
-        data = json.loads(request.body)
-        
-        # This 'awaits' the prediction without freezing the whole server
-        result = await async_get_prediction(data)
-        
-        return JsonResponse(result)
+        try:
+            raw_body = request.body.decode('utf-8')
+            print(f"📦 RAW DATA RECEIVED: {raw_body}")
+            
+            data = json.loads(raw_body)
+            # Remove CSRF if it exists so the float() conversion doesn't crash
+            data.pop('csrfmiddlewaretoken', None) 
+            
+            print("🧠 CALLING MODEL...")
+            result = await async_get_prediction(data)
+            print(f"✅ MODEL RETURNED: {result}")
+            
+            return JsonResponse(result)
+        except Exception as e:
+            print(f"❌ CRITICAL ERROR: {str(e)}")
+            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+    
+    print("⚠️ NOT A POST REQUEST")
+    return render(request, 'members/predict.html')
