@@ -25,11 +25,11 @@ def load_housing_data(housing_path=HOUSING_PATH):
 
 data = load_housing_data()
 
-# --- 2️⃣ Prepare Features and Labels ---
+# Prepare Features and Labels ---
 X = data.drop("median_house_value", axis=1)
 y = data["median_house_value"]
 
-# --- 3️⃣ Build Both Pipelines ---
+
 
 # Linear Regression Pipeline
 lin_reg_model = Pipeline([
