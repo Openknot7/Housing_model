@@ -18,15 +18,15 @@
 
 <body>
 
-<div class="card">
-    <h1>🏠 Home Valuation Tool</h1>
+        <div class="card">
+            <h1>🏠 Home Valuation Tool</h1>
 
-    <div id="map"></div>
-    
-    <form id="predictionForm">
-        {% csrf_token %}
+            <div id="map"></div>
+            
+            <form id="predictionForm">
+                {% csrf_token %}
 
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div style="display: flex; gap: 10px; margin-bottom: 5px;">
             <div style="flex: 1;">
                 <label>Longitude</label>
                 <input type="number" step="any" id="longitude" name="longitude" required>
@@ -36,6 +36,11 @@
                 <input type="number" step="any" id="latitude" name="latitude" required>
             </div>
         </div>
+        <button type="button" onclick="getLocation()" style="width: 100%; margin-bottom: 15px; background: #3498db; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">
+            📍 Use My Current Location
+        </button>
+
+        
 
         <div class="input-group">
             <label>Median Income ($10k)</label>
@@ -82,6 +87,43 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
 
 <script>
+
+    function getLocation() {
+    const statusContainer = document.getElementById("result-container");
+    
+    if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser");
+        return;
+    }
+
+    // Optional: Show a loading message
+    statusContainer.innerHTML = "<i>🛰️ Connecting to GPS...</i>";
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+
+            // 1. Update the Input Fields
+            document.getElementById("latitude").value = lat.toFixed(6);
+            document.getElementById("longitude").value = lng.toFixed(6);
+
+            // 2. Update the Map View
+            map.setView([lat, lng], 13); // Zoom in closer
+
+            // 3. Update the Map Marker
+            if (marker) map.removeLayer(marker);
+            marker = L.marker([lat, lng]).addTo(map);
+
+            statusContainer.innerHTML = "<small style='color:green'>Location detected!</small>";
+        },
+        (error) => {
+            statusContainer.innerHTML = "";
+            alert("Unable to retrieve your location. Please check your browser permissions.");
+        }
+    );
+}
+
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie) {

@@ -3,9 +3,19 @@ from sklearn.preprocessing import FunctionTransformer, StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.compose import ColumnTransformer, make_column_selector
 
-from members.ml_models.features import column_ratio, ratio_name
-from members.ml_models.cluster import ClusterSimilarity  
-from members.ml_models.cat import cat_pipeline            
+import sys
+import os
+
+# Get the path to the folder ABOVE this script (the project root)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Add it to Python's search path
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
+
+from ml_models.features import column_ratio, ratio_name
+from ml_models.cluster import ClusterSimilarity  
+from ml_models.cat import cat_pipeline            
 
 import numpy as np
 

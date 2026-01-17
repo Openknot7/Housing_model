@@ -5,7 +5,7 @@ import joblib
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor  # Need this!
-from members.ml_models.pipelines import preprocessing
+from .pipelines import preprocessing
 
 
 DOWNLOAD_ROOT = "https://raw.githubusercontent.com/ageron/handson-ml2/master/"
@@ -56,7 +56,9 @@ models_to_save = {
     "rf": rf_reg_model
 }
 
-save_path = "members/ml_models/California_Housing_Model.pkl"
+save_path = "ml_models/California_Housing_Model.pkl"
 joblib.dump(models_to_save, save_path)
+
+
 
 print(f"✅ Success! Models saved to {save_path}")

@@ -2,10 +2,25 @@ import joblib
 import pandas as pd
 import os
 import traceback
+import sys
 
+# 1. ENSURE MODULE IS LOADED
+# We import this so that when joblib loads the file, it knows what "features" is.
+try:
+    import ml_models.features
+except ImportError:
+    # Fallback: if running from a weird path, force root into sys.path
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    import ml_models.features
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_PATH = os.path.join(BASE_DIR, "ml_models", "California_Housing_Model.pkl")
+# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# 2. POINT TO THE NEW FIXED FILE
+MODEL_PATH = os.path.join(BASE_DIR, "ml_models", "California_Housing_Model_Fixed.pkl")
+
+# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# MODEL_PATH = os.path.join(BASE_DIR, "ml_models", "California_Housing_Model.pkl")
 
 # MODEL_PATH = r"C:\Users\User\open\openknot_club\members\ml_models\California_Housing_Model.pkl"
 
