@@ -1,67 +1,74 @@
-from django.http import JsonResponse
-from django.shortcuts import render
-from .services.predict_service import get_model_prediction 
+# members/views.py
 import json
+import logging
 
-from .services.predict_service import get_model_prediction 
-from .services.heatmap import get_heatmap_data 
+from asgiref.sync import sync_to_async
+from django.http import JsonResponse, HttpResponseBadRequest
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt  # only if you need to exempt
+
+from .services.predict_service import get_model_prediction
+from .services.heatmap import get_heatmap_data
+
+logger = logging.getLogger(__name__)
+
+# Wrap the synchronous prediction function so it can be awaited from an async view.
+# Keep thread_sensitive=False (default) so the call runs in a threadpool and does not block the event loop.
+async_get_prediction = sync_to_async(get_model_prediction, thread_sensitive=False)
+
 
 def home(request):
-    """
-    Standard view to serve the initial HTML page.
-    """
-    return render(request, 'members/predict.html')
+    """Serve the initial HTML page."""
+    return render(request, "members/predict.html")
 
-def predict(request):
-    if request.method == 'POST':
-        # 1. Parse JSON from the frontend
-        data = json.loads(request.body)
-        
-        # 2. Use the Secret Service to get the answer
-        result = get_model_prediction(data)
-        
-        # 3. Send JSON back
+
+async def predict(request):
+    """
+    Async view that receives JSON POST from the frontend, delegates to the sync ML function
+    via sync_to_async, and returns JSON.
+    """
+    if request.method != "POST":
+        return render(request, "members/predict.html")
+
+    # Basic content-type check (frontend should send application/json)
+    content_type = request.META.get("CONTENT_TYPE", "")
+    if "application/json" not in content_type.lower():
+        # Accept form-encoded POSTs too, but prefer JSON (adjust as needed)
+        return HttpResponseBadRequest("Expected application/json")
+
+    try:
+        # request.body is bytes; decode then load JSON.
+        raw_body = request.body.decode("utf-8")
+        data = json.loads(raw_body)
+
+        # If frontend included csrftoken in body (not recommended), remove it here.
+        data.pop("csrfmiddlewaretoken", None)
+
+        logger.debug("Received prediction request: %s", data)
+
+        # Call the blocking model function in a threadpool
+        result = await async_get_prediction(data)
+
+        # Ensure result is JSON-serializable (dict/list). If your service returns a model object,
+        # convert to primitive types here.
         return JsonResponse(result)
 
-    # If it's a GET request, just show the page
-    return render(request, 'members/predict.html')
+    except json.JSONDecodeError as exc:
+        logger.exception("JSON decode error")
+        return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
+    except Exception as exc:
+        logger.exception("Unexpected error during prediction")
+        return JsonResponse({"status": "error", "message": str(exc)}, status=500)
 
-from .services.heatmap import get_heatmap_data 
-
-# ... keep your home and predict functions ...
 
 def heatmap_api(request):
     """
-    Simple API to send the heatmap data to the frontend
+    Simple synchronous API to return heatmap data.
+    This is small and fast, so keeping it sync is fine.
     """
-    data = get_heatmap_data()
-    return JsonResponse({"data": data})
-
-from asgiref.sync import sync_to_async# Install via 'pip install adispatch' or use built-in
-from django.http import JsonResponse
-
-# This turns your synchronous prediction function into an async-friendly one
-async_get_prediction = sync_to_async(get_model_prediction)
-
-async def predict(request):
-    print("\n🚀 --- PREDICT ATTEMPT STARTED ---")
-    if request.method == 'POST':
-        try:
-            raw_body = request.body.decode('utf-8')
-            print(f"📦 RAW DATA RECEIVED: {raw_body}")
-            
-            data = json.loads(raw_body)
-            # Remove CSRF if it exists so the float() conversion doesn't crash
-            data.pop('csrfmiddlewaretoken', None) 
-            
-            print("🧠 CALLING MODEL...")
-            result = await async_get_prediction(data)
-            print(f"✅ MODEL RETURNED: {result}")
-            
-            return JsonResponse(result)
-        except Exception as e:
-            print(f"❌ CRITICAL ERROR: {str(e)}")
-            return JsonResponse({"status": "error", "message": str(e)}, status=500)
-    
-    print("⚠️ NOT A POST REQUEST")
-    return render(request, 'members/predict.html')
+    try:
+        data = get_heatmap_data()
+        return JsonResponse({"data": data})
+    except Exception:
+        logger.exception("Failed to get heatmap data")
+        return JsonResponse({"status": "error", "message": "Heatmap generation failed"}, status=500)
