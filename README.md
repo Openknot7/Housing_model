@@ -52,75 +52,40 @@ i) Linear Regression
 ii) Random Forest Regression
     -An ensemble learning model that fits multiple decision trees and averages results to improve prediction accuracy.
 
-# Project Architecture
+Project Architecture
+| Step                              | Description                                                     |
+| --------------------------------- | --------------------------------------------------------------- |
+| **1. California Housing Dataset** | Raw housing data from the California dataset.                   |
+| **2. Data Preprocessing**         | Cleaning, handling missing values, and train/test split.        |
+| **3. Feature Engineering**        | Scaling, encoding categorical variables, and feature selection. |
+| **4a. Linear Regression**         | Train a simple linear regression model.                         |
+| **4b. Random Forest Regression**  | Train a Random Forest ensemble tree model.                      |
+| **5. Model Evaluation**           | Evaluate models using **MAE, MSE, and R² Score**.               |
 
-┌──────────────────────────┐
-│   California Housing     │
-│        Dataset           │
-└────────────┬─────────────┘
-             │
-             ▼
-┌──────────────────────────┐
-│   Data Preprocessing     │
-│  (Cleaning & Splitting)  │
-└────────────┬─────────────┘
-             │
-             ▼
-┌──────────────────────────┐
-│   Feature Engineering    │
-│ (Scaling / Selection)    │
-└────────────┬─────────────┘
-             │
-     ┌───────┴─────────┐
-     ▼                 ▼
-┌──────────────┐  ┌──────────────┐
-│ Linear        │  │ Random Forest│
-│ Regression    │  │ Regression   │
-└──────┬────────┘  └──────┬────────┘
-       │                  │
-       ▼                  ▼
-┌────────────────────────────────┐
-│        Model Evaluation         │
-│   (MAE, MSE, R² Score)          │
-└────────────────────────────────┘
+## Project Architecture
+```mermaid
+graph TD
+    A[California Housing Dataset] --> B["Data Preprocessing (Cleaning & Split)"]
+    B --> C["Feature Engineering (Scaling & Selection)"]
+    C --> D1[Linear Regression]
+    C --> D2[Random Forest]
+    D1 --> E["Model Evaluation (MAE, MSE, R2)"]
+    D2 --> E
 
-## Example Output
-
-After training the models, the following metrics are printed to the console:
-
-- Mean Absolute Error (MAE)
-- Mean Squared Error (MSE)
-- R² Score
-
-Example:
-# Linear Regression:
-MAE: 0.54
-MSE: 0.72
-R² Score: 0.61
-
-# Random Forest Regression:
-MAE: 0.41
-MSE: 0.55
-R² Score: 0.78
-
+```
 
 ### What to include in the notebook
 - Dataset loading
 - Basic EDA (head, describe)
 - Model comparison
 
-## Typical Model Results
+#### Typical Model Results
 
 These example results are based on standard implementations of the California Housing dataset:
-|                          |              Metric                  |
-|         MODELS           |--------------------------------------|
-|                          | MAE (USD) | MSE (USD²)    | R² Score |
+| Model                    | MAE (USD) | MSE (USD²)    | R² Score |
 | ------------------------ | --------- | ------------- | -------- |
 | Linear Regression        | 52,138    | 4,922,016,476 | 0.645    |
 | Random Forest Regression | 30,429    | 2,280,072,324 | 0.836    |
-
-
-
 
 *Actual results may vary depending on preprocessing, train/test split, and hyperparameter tuning. But, these are my obtained scores on the basis of my prediction model*
 
