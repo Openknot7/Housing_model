@@ -1,4 +1,4 @@
-Project Overview
+# Project Overview
 
 The aim of this project is to explore and compare the performance of two different regression algorithms on the California Housing dataset:
 -Linear Regression
@@ -7,14 +7,14 @@ The aim of this project is to explore and compare the performance of two differe
 Both models are trained to predict median house values using features such as median income, house age, average rooms, and others.
 This project can serve as a starting point for anyone looking to understand regression modeling on real-world housing data.
 
-Features
+# Features
 -Data preprocessing and exploratory analysis
 -Implementation of Linear Regression
 -Implementation of Random Forest Regression
 -Model evaluation using common metrics
 -Clear project structure with dataset, models, and scripts
 
-Getting Started
+# Getting Started
 
 Prerequisites
 
