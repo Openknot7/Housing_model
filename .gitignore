@@ -216,3 +216,4 @@ db.sqlite3
 .vscode/ 
 >>>>>>> 1573960 (First working version with async views and requirements)
 members/ml_models/California_Housing_Model.pkl 
+staticfiles/admin
